@@ -54,14 +54,16 @@ airbnb/
 |-- scripts/                  Node.js local and Snowflake query tools
 |-- seeds/                    full-moon and synthetic Apple Pay CSV data
 |-- snapshots/                Airbnb source history
-|-- tests/                    singular and custom generic tests
+|-- test/                     Node database, lesson, and UI API tests
+|-- tests/                    dbt singular and custom generic tests
+|-- ui/                       local SQL editor and interactive course
 |-- _prod_profiles/           environment-variable Snowflake profile
 |-- dbt_project.yml           dbt project configuration
 |-- packages.yml              pinned dbt packages
 `-- package.json              Node commands and Snowflake driver
 ```
 
-## Start here: local SQL with Node.js
+## Start here: interactive SQL with Node.js
 
 This workstation has Node.js 24 installed. The local lab uses Node's built-in
 SQLite engine and the synthetic Apple Pay seeds, so it does not need Snowflake,
@@ -72,6 +74,18 @@ From this `airbnb` directory:
 ```powershell
 node --version
 npm install
+npm run ui
+```
+
+Open <http://127.0.0.1:4173>. The browser lab provides a read-only SQL editor,
+a model catalog, saved progress, and ten guided lessons that move from seeds to
+staging, dimensions, facts, marts, and reconciliation. See
+[`docs/INTERACTIVE_LEARNING_UI.md`](docs/INTERACTIVE_LEARNING_UI.md) for the
+complete lesson plan and safety design.
+
+The same local model is available from the terminal:
+
+```powershell
 npm run lab:tables
 npm run lab:examples
 npm run lab -- --example daily-performance
@@ -166,6 +180,8 @@ them for learning and analysis.
   copy-ready templates for the dbt files used most often.
 - [`docs/NODE_QUERY_LAB.md`](docs/NODE_QUERY_LAB.md) teaches local and Snowflake
   querying with Node.js.
+- [`docs/INTERACTIVE_LEARNING_UI.md`](docs/INTERACTIVE_LEARNING_UI.md) explains
+  the browser SQL workspace and its ten result-checked lessons.
 
 Generate dbt's lineage site after a successful build:
 

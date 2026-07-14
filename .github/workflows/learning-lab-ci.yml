@@ -38,8 +38,16 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check scripts/apple-pay-lab.mjs
+          node --check scripts/apple-pay-ui.mjs
           node --check scripts/snowflake-query.mjs
+          node --check scripts/lib/apple-pay-database.mjs
+          node --check scripts/lib/apple-pay-lessons.mjs
+          node --check scripts/lib/query-worker.mjs
           node --check scripts/lib/sql-safety.mjs
+          node --check ui/app.mjs
+
+      - name: Run local database, lesson, and UI tests
+        run: npm test
 
       - name: Exercise the seed-backed model
         run: npm run lab -- --example daily-performance

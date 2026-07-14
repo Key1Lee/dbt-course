@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A local SQL learning lab for the synthetic Apple Pay analytics data model.">
+    <title>Apple Pay Analytics Learning Lab</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/styles.css">
+    <script type="module" src="/app.mjs"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to lesson</a>
+
+    <header class="site-header">
+      <div class="brand-lockup">
+        <span class="brand-mark" aria-hidden="true">AP</span>
+        <div>
+          <p class="eyebrow">Analytics engineering practice</p>
+          <h1>Apple Pay Analytics Lab</h1>
+        </div>
+      </div>
+      <div class="header-meta">
+        <span class="notice-badge">Synthetic training data</span>
+        <span class="server-state" id="server-state" role="status">
+          <span class="status-dot" aria-hidden="true"></span>
+          Connecting
+        </span>
+      </div>
+    </header>
+
+    <div class="app-shell">
+      <nav class="lesson-sidebar" aria-label="Course lessons">
+        <div class="sidebar-heading">
+          <div>
+            <p class="eyebrow">Your course</p>
+            <h2>10 guided lessons</h2>
+          </div>
+          <button class="text-button" id="reset-progress" type="button">Reset</button>
+        </div>
+
+        <div class="progress-copy">
+          <span id="progress-label">0 of 10 complete</span>
+          <span id="progress-percent">0%</span>
+        </div>
+        <progress class="progress-track" id="progress-bar" max="10" value="0" aria-label="Course progress"></progress>
+
+        <ol class="lesson-list" id="lesson-list"></ol>
+
+        <div class="sidebar-tip">
+          <strong>Keyboard shortcut</strong>
+          <span>Run SQL with <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd>.</span>
+        </div>
+      </nav>
+
+      <main id="main-content" tabindex="-1">
+        <div class="mode-bar" aria-label="Workspace mode">
+          <div class="segmented-control">
+            <button class="mode-button is-active" id="learn-mode" type="button" aria-pressed="true">
+              Guided lessons
+            </button>
+            <button class="mode-button" id="explore-mode" type="button" aria-pressed="false">
+              SQL playground
+            </button>
+          </div>
+          <button class="secondary-button" id="open-catalog" type="button">
+            Browse data models
+          </button>
+        </div>
+
+        <section class="lesson-card" id="lesson-panel" aria-labelledby="lesson-title">
+          <div class="lesson-heading">
+            <div>
+              <p class="lesson-kicker" id="lesson-kicker">Lesson</p>
+              <h2 id="lesson-title" tabindex="-1">Loading your course…</h2>
+            </div>
+            <span class="duration-pill" id="lesson-duration"></span>
+          </div>
+
+          <p class="lesson-objective" id="lesson-objective"></p>
+          <div class="lesson-grid">
+            <article>
+              <h3>Why this matters</h3>
+              <p id="lesson-concept"></p>
+            </article>
+            <article class="task-card">
+              <h3>Your task</h3>
+              <p id="lesson-task"></p>
+            </article>
+          </div>
+
+          <div class="model-path">
+            <span>Model path</span>
+            <code id="lesson-model-path"></code>
+          </div>
+
+          <details class="hint-box" id="hint-box">
+            <summary>Need a hint?</summary>
+            <ol id="lesson-hints"></ol>
+          </details>
+
+          <div class="lesson-actions">
+            <button class="secondary-button" id="load-starter" type="button">Reset starter SQL</button>
+            <button class="text-button" id="show-solution" type="button">Show solution</button>
+          </div>
+        </section>
+
+        <section class="playground-intro" id="playground-intro" aria-labelledby="playground-title" hidden>
+          <div>
+            <p class="lesson-kicker">Open practice</p>
+            <h2 id="playground-title">Explore the complete data model</h2>
+            <p>Query any seed, staging, dimension, fact, or mart relation. The lab accepts read-only SQLite SQL and returns up to 500 rows.</p>
+          </div>
+          <label class="example-picker" for="query-example">
+            Try an example
+            <select id="query-example">
+              <option value="">Choose a query…</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="workspace-card" aria-labelledby="workspace-title">
+          <div class="workspace-heading">
+            <div>
+              <p class="eyebrow">Local SQLite workspace</p>
+              <h2 id="workspace-title">SQL editor</h2>
+            </div>
+            <label class="row-limit" for="row-limit">
+              Row limit
+              <select id="row-limit">
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100" selected>100</option>
+                <option value="250">250</option>
+                <option value="500">500</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="visually-hidden" for="sql-editor">SQL query</label>
+          <textarea id="sql-editor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="editor-help"></textarea>
+          <div class="editor-footer">
+            <p id="editor-help">Read-only SELECT and WITH queries only. Data resets each time the server starts.</p>
+            <button class="primary-button" id="run-query" type="button">
+              <span aria-hidden="true">▶</span>
+              Run query
+            </button>
+          </div>
+        </section>
+
+        <section class="feedback" id="feedback" role="status" aria-live="polite" aria-atomic="true"></section>
+
+        <section class="results-card" aria-labelledby="results-title">
+          <div class="results-heading">
+            <div>
+              <p class="eyebrow">Query output</p>
+              <h2 id="results-title">Results</h2>
+            </div>
+            <p class="results-meta" id="results-meta">Run a query to see rows.</p>
+          </div>
+          <div class="empty-results" id="empty-results">
+            <span aria-hidden="true">{ }</span>
+            <p>Your result set will appear here.</p>
+          </div>
+          <div class="table-scroll" id="table-scroll" tabindex="0" aria-label="Scrollable query results" hidden>
+            <table>
+              <caption class="visually-hidden">SQL query results</caption>
+              <thead id="results-head"></thead>
+              <tbody id="results-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <div class="lesson-pagination" id="lesson-pagination">
+          <button class="secondary-button" id="previous-lesson" type="button">← Previous lesson</button>
+          <button class="secondary-button" id="next-lesson" type="button">Next lesson →</button>
+        </div>
+      </main>
+    </div>
+
+    <dialog class="catalog-dialog" id="catalog-dialog" aria-labelledby="catalog-title">
+      <div class="dialog-heading">
+        <div>
+          <p class="eyebrow">13 queryable relations</p>
+          <h2 id="catalog-title">Data model catalog</h2>
+        </div>
+        <button class="icon-button" id="close-catalog" type="button" aria-label="Close data model catalog">×</button>
+      </div>
+      <p>Select a model to load a preview query into the SQL editor.</p>
+      <label for="catalog-filter">
+        Filter models
+        <input id="catalog-filter" type="search" placeholder="Try fact, merchant, or mart">
+      </label>
+      <div class="catalog-list" id="catalog-list"></div>
+    </dialog>
+  </body>
+</html>

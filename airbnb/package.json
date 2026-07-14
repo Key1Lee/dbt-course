@@ -8,9 +8,12 @@
     "node": ">=24.10.0"
   },
   "scripts": {
+    "ui": "node scripts/apple-pay-ui.mjs",
+    "learn": "node scripts/apple-pay-ui.mjs",
     "lab": "node scripts/apple-pay-lab.mjs",
     "lab:tables": "node scripts/apple-pay-lab.mjs --tables",
     "lab:examples": "node scripts/apple-pay-lab.mjs --examples",
+    "test": "node --test --test-reporter=spec",
     "query:snowflake": "node --env-file-if-exists=.env scripts/snowflake-query.mjs"
   },
   "dependencies": {

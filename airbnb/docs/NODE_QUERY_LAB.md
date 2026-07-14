@@ -13,6 +13,14 @@ Run these commands from the `airbnb` directory:
 
 ```powershell
 node --version
+npm run ui
+```
+
+Open <http://127.0.0.1:4173> to use the visual SQL editor and ten interactive
+lessons. See [Interactive Apple Pay SQL Learning UI](INTERACTIVE_LEARNING_UI.md)
+for the full curriculum. To practice in the terminal instead:
+
+```powershell
 npm run lab:tables
 npm run lab:examples
 npm run lab -- --example daily-performance

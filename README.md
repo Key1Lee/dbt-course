@@ -22,6 +22,16 @@ The main project is [`airbnb/`](airbnb/README.md).
 ```powershell
 Set-Location airbnb
 npm install
+npm run ui
+```
+
+Open <http://127.0.0.1:4173> for the interactive SQL editor and ten guided
+Apple Pay lessons. The browser lab runs entirely on this computer with
+synthetic data.
+
+The original terminal exercises are also available:
+
+```powershell
 npm run lab:tables
 npm run lab:examples
 ```
@@ -51,8 +61,9 @@ commit `.env`, `profiles.yml`, private keys, or real payment/customer data.
 2. Follow the [Airbnb pipeline walkthrough](airbnb/docs/PIPELINE_WALKTHROUGH.md).
 3. Study the [important dbt file templates](airbnb/docs/IMPORTANT_FILE_TEMPLATES.md).
 4. Build the [Apple Pay data model](airbnb/docs/APPLE_PAY_DATA_MODEL.md).
-5. Practice in the [Node query lab](airbnb/docs/NODE_QUERY_LAB.md).
-6. Make a learning branch, verify it, and open a pull request.
+5. Complete the [interactive SQL lessons](airbnb/docs/INTERACTIVE_LEARNING_UI.md).
+6. Practice further in the [Node query lab](airbnb/docs/NODE_QUERY_LAB.md).
+7. Make a learning branch, verify it, and open a pull request.
 
 ## Managing this repository
 
