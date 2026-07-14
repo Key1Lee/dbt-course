@@ -267,19 +267,35 @@ export function describeRelation(database, name) {
   return { ...relation };
 }
 
+function disambiguateColumnNames(names) {
+  const used = new Set();
+  return names.map((name, index) => {
+    const base = name || `column_${index + 1}`;
+    let candidate = base;
+    let suffix = 2;
+    while (used.has(candidate)) {
+      candidate = `${base}__${suffix}`;
+      suffix += 1;
+    }
+    used.add(candidate);
+    return candidate;
+  });
+}
+
 export function executeReadOnlyQuery(database, sql, { limit = DEFAULT_QUERY_ROWS } = {}) {
   const rowLimit = normalizeQueryLimit(limit);
   const statement = database.prepare(assertReadOnlySql(sql, "sqlite"));
-  const columns = statement.columns().map((column) => column.name);
+  const columns = disambiguateColumnNames(statement.columns().map((column) => column.name));
+  statement.setReturnArrays(true);
   const rows = [];
   let truncated = false;
 
-  for (const row of statement.iterate()) {
+  for (const values of statement.iterate()) {
     if (rows.length >= rowLimit) {
       truncated = true;
       break;
     }
-    rows.push({ ...row });
+    rows.push(Object.fromEntries(columns.map((column, index) => [column, values[index]])));
   }
 
   return {

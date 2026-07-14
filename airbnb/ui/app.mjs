@@ -33,6 +33,7 @@ const elements = Object.fromEntries(
     "feedback",
     "results-meta",
     "empty-results",
+    "empty-results-message",
     "table-scroll",
     "results-head",
     "results-body",
@@ -324,10 +325,19 @@ function renderResults(result) {
 
   elements["results-head"].replaceChildren(headerRow);
   elements["results-body"].replaceChildren(...bodyRows);
+  elements["empty-results-message"].textContent = "The query returned no columns.";
   elements["empty-results"].hidden = result.columns.length > 0;
   elements["table-scroll"].hidden = result.columns.length === 0;
   const truncation = result.truncated ? ` · capped at ${result.limit}` : "";
   elements["results-meta"].textContent = `${result.rowCount} row${result.rowCount === 1 ? "" : "s"} · ${result.durationMs} ms${truncation}`;
+}
+
+function clearResultsAfterError() {
+  elements["results-head"].replaceChildren();
+  elements["results-body"].replaceChildren();
+  elements["empty-results-message"].textContent = "Fix the query and run it again.";
+  elements["empty-results"].hidden = false;
+  elements["table-scroll"].hidden = true;
 }
 
 async function runQuery() {
@@ -378,6 +388,7 @@ async function runQuery() {
       showFeedback(`Query finished successfully with ${result.rowCount} row${result.rowCount === 1 ? "" : "s"}.`, "success");
     }
   } catch (error) {
+    clearResultsAfterError();
     elements["results-meta"].textContent = "Query did not run.";
     showFeedback(error.message || "The query could not be completed.", "error");
   } finally {

@@ -162,7 +162,8 @@ function buildBootstrapData() {
 }
 
 function parsePort(rawPort) {
-  const port = Number.parseInt(String(rawPort), 10);
+  const normalized = String(rawPort).trim();
+  const port = /^\d+$/.test(normalized) ? Number(normalized) : Number.NaN;
   if (!Number.isInteger(port) || port < 1 || port > 65_535) {
     throw new Error("--port must be an integer from 1 to 65535.");
   }
@@ -234,7 +235,7 @@ export function createLearningServer({ queryTimeoutMs = DEFAULT_QUERY_TIMEOUT_MS
         return;
       }
 
-      queryRunning = true;
+      let ownsQuerySlot = false;
       try {
         const body = await readJsonBody(request);
         if (typeof body?.sql !== "string" || !body.sql.trim()) {
@@ -260,6 +261,13 @@ export function createLearningServer({ queryTimeoutMs = DEFAULT_QUERY_TIMEOUT_MS
           throw error;
         }
 
+        if (queryRunning) {
+          sendJson(response, 429, { error: "Another query is running. Wait for it to finish." }, { "Retry-After": "1" });
+          return;
+        }
+        queryRunning = true;
+        ownsQuerySlot = true;
+
         const startedAt = performance.now();
         const result = await runQueryWorker({ id: randomUUID(), sql: body.sql, limit }, queryTimeoutMs);
         const durationMs = Math.max(1, Math.round(performance.now() - startedAt));
@@ -270,7 +278,7 @@ export function createLearningServer({ queryTimeoutMs = DEFAULT_QUERY_TIMEOUT_MS
           sendJson(response, error.statusCode ?? 400, { error: cleanErrorMessage(error) });
         }
       } finally {
-        queryRunning = false;
+        if (ownsQuerySlot) queryRunning = false;
       }
       return;
     }

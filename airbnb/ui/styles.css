@@ -702,7 +702,7 @@ tbody tr:hover {
 }
 
 .null-value {
-  color: #788692;
+  color: var(--muted);
   font-style: italic;
 }
 

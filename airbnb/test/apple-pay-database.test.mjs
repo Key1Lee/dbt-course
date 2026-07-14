@@ -145,6 +145,17 @@ test("returns column metadata when a query has no rows", () => {
   });
 });
 
+test("duplicate output names preserve positional values with safe aliases", () => {
+  withDatabase((database) => {
+    const result = executeReadOnlyQuery(
+      database,
+      "SELECT 1 AS duplicate, 2 AS duplicate, 3 AS duplicate__2"
+    );
+    assert.deepEqual(result.columns, ["duplicate", "duplicate__2", "duplicate__2__2"]);
+    assert.deepEqual(result.rows, [{ duplicate: 1, duplicate__2: 2, duplicate__2__2: 3 }]);
+  });
+});
+
 test("SQLite itself stays defensive and read-only after initialization", () => {
   withDatabase((database) => {
     assert.throws(

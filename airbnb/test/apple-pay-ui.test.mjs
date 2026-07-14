@@ -152,6 +152,17 @@ test("safe read-only SQL returns bounded structured results", async () => {
   assert.ok(Number.isFinite(body.durationMs) && body.durationMs >= 1);
 });
 
+test("duplicate SQL aliases stay distinct across the JSON API", async () => {
+  const { response, body } = await postJson({
+    sql: "SELECT 1 AS duplicate, 2 AS duplicate",
+    limit: 10
+  });
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(body.columns, ["duplicate", "duplicate__2"]);
+  assert.deepEqual(body.rows, [{ duplicate: 1, duplicate__2: 2 }]);
+});
+
 test("a lesson solution is evaluated through the query endpoint", async () => {
   const bootstrap = await fetchJson("/api/bootstrap");
   const lesson = bootstrap.body.lessons.find(({ id }) => id === "lesson-1");
@@ -214,6 +225,34 @@ test("malformed JSON, content type, method, and origin protections fail closed",
   });
   assert.equal(wrongOrigin.response.status, 403);
   assert.match(wrongOrigin.body.error, /cross-origin/i);
+});
+
+test("a partial JSON upload does not reserve the query worker", async () => {
+  const url = new URL("/api/query", baseUrl);
+  const partialRequest = httpRequest({
+    hostname: url.hostname,
+    port: url.port,
+    path: url.pathname,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Content-Length": 1_000,
+      Origin: allowedOrigin
+    }
+  });
+  partialRequest.on("response", (response) => response.resume());
+  partialRequest.on("error", () => {});
+  partialRequest.flushHeaders();
+  partialRequest.write('{"sql":"SELECT 1","padding":"');
+
+  await new Promise((resolvePromise) => setTimeout(resolvePromise, 25));
+  try {
+    const parallel = await postJson({ sql: "SELECT 1 AS value", limit: 1 });
+    assert.equal(parallel.response.status, 200);
+    assert.deepEqual(parallel.body.rows, [{ value: 1 }]);
+  } finally {
+    partialRequest.destroy();
+  }
 });
 
 test("row limits are enforced and truncation is reported", async () => {
