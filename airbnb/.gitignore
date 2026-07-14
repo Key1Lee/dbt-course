@@ -1,0 +1,29 @@
+# Local credentials and environment overrides
+.env
+/profiles.yml
+*.pem
+*.key
+*.p8
+*.p12
+
+# dbt-generated artifacts
+target/
+target*/
+dbt_packages/
+dbt_internal_packages/
+logs/
+
+# Node-generated artifacts
+node_modules/
+npm-debug.log*
+
+# Python-generated artifacts
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+.vscode/

@@ -1,0 +1,495 @@
+version: 2
+
+seeds:
+  - name: seed_apple_pay_customers
+    description: Safe synthetic customer records used only for the Apple Pay learning pipeline.
+    config:
+      tags: ['apple_pay']
+    columns:
+      - name: customer_id
+        description: Synthetic primary key for a customer.
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_name
+        description: Fictional display name for the synthetic customer.
+        data_tests:
+          - not_null
+      - name: customer_country
+        description: Two-letter country code associated with the customer.
+        data_tests:
+          - not_null
+      - name: signup_at
+        description: Timestamp when the synthetic customer joined.
+        data_tests:
+          - not_null
+
+  - name: seed_apple_pay_merchants
+    description: Safe synthetic merchants that accept the example Apple Pay transactions.
+    config:
+      tags: ['apple_pay']
+    columns:
+      - name: merchant_id
+        description: Synthetic primary key for a merchant.
+        data_tests:
+          - unique
+          - not_null
+      - name: merchant_name
+        description: Fictional merchant display name.
+        data_tests:
+          - not_null
+      - name: merchant_category
+        description: Simple reporting category for the merchant.
+        data_tests:
+          - not_null
+      - name: merchant_country
+        description: Two-letter country code where the merchant operates.
+        data_tests:
+          - not_null
+
+  - name: seed_apple_pay_devices
+    description: Safe synthetic devices enrolled in a fictional wallet.
+    config:
+      tags: ['apple_pay']
+    columns:
+      - name: device_id
+        description: Synthetic primary key for a device; it is not a real hardware identifier.
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: Customer who owns the synthetic device.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('seed_apple_pay_customers')
+                field: customer_id
+      - name: device_type
+        description: Type of Apple device in the learning example.
+        data_tests:
+          - not_null
+      - name: os_version
+        description: Synthetic operating-system version used for segmentation practice.
+        data_tests:
+          - not_null
+      - name: wallet_enrolled_at
+        description: Timestamp when the device was enrolled in the fictional wallet.
+        data_tests:
+          - not_null
+
+  - name: seed_apple_pay_transactions
+    description: >
+      Safe synthetic current-state transactions. This seed contains no PAN, CVV,
+      cryptogram, real payment token, address, or other sensitive payment data.
+    config:
+      tags: ['apple_pay']
+    columns:
+      - name: transaction_id
+        description: Synthetic primary key for a payment attempt.
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: Customer associated with the payment attempt.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('seed_apple_pay_customers')
+                field: customer_id
+      - name: merchant_id
+        description: Merchant associated with the payment attempt.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('seed_apple_pay_merchants')
+                field: merchant_id
+      - name: device_id
+        description: Synthetic device used for the payment attempt.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('seed_apple_pay_devices')
+                field: device_id
+      - name: transaction_ts
+        description: Timestamp when the payment attempt occurred.
+        data_tests:
+          - not_null
+      - name: amount
+        description: Requested transaction amount in the stated currency.
+        data_tests:
+          - not_null
+          - positive_values
+      - name: currency
+        description: ISO-like three-letter transaction currency code.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['USD', 'CAD', 'GBP']
+      - name: payment_channel
+        description: Where the synthetic payment was initiated.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['in_store', 'in_app', 'web']
+      - name: transaction_status
+        description: Current state of the synthetic transaction.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['authorized', 'settled', 'declined', 'refunded']
+      - name: decline_reason
+        description: Synthetic reason for a decline; blank for non-declined rows.
+      - name: payment_network
+        description: Fictionalized payment-network label used for aggregation practice.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['VISA', 'MASTERCARD', 'AMEX']
+      - name: card_type
+        description: Broad funding type without card details.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['credit', 'debit', 'prepaid']
+      - name: updated_at
+        description: Timestamp when the current transaction record was last updated.
+        data_tests:
+          - not_null
+
+models:
+  - name: stg_apple_pay_customers
+    description: Queryable staging view that standardizes synthetic customer types and text.
+    columns:
+      - name: customer_id
+        description: Trimmed synthetic customer identifier.
+      - name: customer_name
+        description: Cleaned fictional customer display name.
+      - name: customer_country
+        description: Uppercase two-letter customer country code.
+      - name: signup_at
+        description: Customer signup timestamp cast to TIMESTAMP_NTZ.
+
+  - name: stg_apple_pay_merchants
+    description: Queryable staging view that standardizes synthetic merchant attributes.
+    columns:
+      - name: merchant_id
+        description: Trimmed synthetic merchant identifier.
+      - name: merchant_name
+        description: Cleaned fictional merchant display name.
+      - name: merchant_category
+        description: Lowercase merchant category.
+      - name: merchant_country
+        description: Uppercase two-letter merchant country code.
+
+  - name: stg_apple_pay_devices
+    description: Queryable staging view that standardizes device and wallet-enrollment data.
+    columns:
+      - name: device_id
+        description: Trimmed synthetic device identifier.
+      - name: customer_id
+        description: Trimmed identifier of the device owner.
+      - name: device_type
+        description: Lowercase type of Apple device.
+      - name: os_version
+        description: Operating-system version stored as text.
+      - name: wallet_enrolled_at
+        description: Wallet-enrollment timestamp cast to TIMESTAMP_NTZ.
+
+  - name: stg_apple_pay_transactions
+    description: Queryable staging view that standardizes transaction identifiers, categories, amounts, and timestamps.
+    columns:
+      - name: transaction_id
+        description: Trimmed synthetic transaction identifier.
+      - name: customer_id
+        description: Trimmed synthetic customer identifier.
+      - name: merchant_id
+        description: Trimmed synthetic merchant identifier.
+      - name: device_id
+        description: Trimmed synthetic device identifier.
+      - name: transaction_ts
+        description: Transaction timestamp cast to TIMESTAMP_NTZ.
+      - name: amount
+        description: Requested amount cast to NUMBER(12,2).
+      - name: currency
+        description: Uppercase three-letter currency code.
+      - name: payment_channel
+        description: Lowercase initiation channel such as in_store, in_app, or web.
+      - name: transaction_status
+        description: Lowercase current transaction status.
+      - name: decline_reason
+        description: Lowercase decline reason with blank strings converted to null.
+      - name: payment_network
+        description: Uppercase payment-network label.
+      - name: card_type
+        description: Lowercase broad funding type.
+      - name: updated_at
+        description: Last-update timestamp cast to TIMESTAMP_NTZ.
+
+  - name: dim_apple_pay_customers
+    description: Customer dimension at one row per synthetic customer.
+    columns:
+      - name: customer_id
+        description: Primary key for the customer dimension.
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_name
+        description: Fictional customer display name.
+        data_tests:
+          - not_null
+      - name: customer_country
+        description: Uppercase two-letter customer country code.
+        data_tests:
+          - not_null
+      - name: signup_at
+        description: Timestamp when the synthetic customer joined.
+        data_tests:
+          - not_null
+
+  - name: dim_apple_pay_merchants
+    description: Merchant dimension at one row per synthetic merchant.
+    columns:
+      - name: merchant_id
+        description: Primary key for the merchant dimension.
+        data_tests:
+          - unique
+          - not_null
+      - name: merchant_name
+        description: Fictional merchant display name.
+        data_tests:
+          - not_null
+      - name: merchant_category
+        description: Reporting category for the merchant.
+        data_tests:
+          - not_null
+      - name: merchant_country
+        description: Uppercase two-letter merchant country code.
+        data_tests:
+          - not_null
+
+  - name: dim_apple_pay_devices
+    description: Device dimension at one row per synthetic device.
+    columns:
+      - name: device_id
+        description: Primary key for the device dimension.
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: Customer who owns the synthetic device.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_apple_pay_customers')
+                field: customer_id
+      - name: device_type
+        description: Type of Apple device.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['iphone', 'apple_watch', 'ipad', 'mac']
+      - name: os_version
+        description: Synthetic operating-system version.
+        data_tests:
+          - not_null
+      - name: wallet_enrolled_at
+        description: Timestamp when the device was enrolled in the fictional wallet.
+        data_tests:
+          - not_null
+
+  - name: fct_apple_pay_transactions
+    description: >
+      Incremental transaction fact at one row per transaction_id. It merges new and
+      recently updated records using updated_at with a three-day lookback.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "updated_at >= transaction_ts"
+    columns:
+      - name: transaction_id
+        description: Primary key for the transaction fact.
+        data_tests:
+          - unique
+          - not_null
+      - name: transaction_ts
+        description: Timestamp when the payment attempt occurred.
+        data_tests:
+          - not_null
+      - name: transaction_date
+        description: Calendar date derived from transaction_ts.
+        data_tests:
+          - not_null
+      - name: customer_id
+        description: Foreign key to the customer dimension.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_apple_pay_customers')
+                field: customer_id
+      - name: merchant_id
+        description: Foreign key to the merchant dimension.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_apple_pay_merchants')
+                field: merchant_id
+      - name: device_id
+        description: Foreign key to the device dimension.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_apple_pay_devices')
+                field: device_id
+      - name: amount
+        description: Requested transaction amount in the stated currency.
+        data_tests:
+          - not_null
+          - positive_values
+      - name: currency
+        description: Uppercase three-letter transaction currency code.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['USD', 'CAD', 'GBP']
+      - name: payment_channel
+        description: Where the synthetic payment was initiated.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['in_store', 'in_app', 'web']
+      - name: transaction_status
+        description: Current transaction state.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['authorized', 'settled', 'declined', 'refunded']
+      - name: decline_reason
+        description: Decline reason populated only for declined transactions.
+      - name: payment_network
+        description: Payment-network label with no card number or token.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['VISA', 'MASTERCARD', 'AMEX']
+      - name: card_type
+        description: Broad funding type without payment-card details.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['credit', 'debit', 'prepaid']
+      - name: is_approved
+        description: True for authorized, settled, or refunded transactions.
+        data_tests:
+          - not_null
+      - name: is_declined
+        description: True only when transaction_status is declined.
+        data_tests:
+          - not_null
+      - name: updated_at
+        description: Timestamp used to identify new and changed source records.
+        data_tests:
+          - not_null
+
+  - name: mart_apple_pay_daily_performance
+    description: >
+      Daily Apple Pay learning metrics at one row per transaction_date, currency,
+      and payment_channel. Currency remains in the grain so unlike currencies are
+      never summed together.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - transaction_date
+              - currency
+              - payment_channel
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "transaction_count = approved_transaction_count + declined_transaction_count"
+    columns:
+      - name: transaction_date
+        description: Reporting date.
+        data_tests:
+          - not_null
+      - name: currency
+        description: Currency kept in the mart grain.
+        data_tests:
+          - not_null
+      - name: payment_channel
+        description: Initiation channel kept in the mart grain for channel comparisons.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['in_store', 'in_app', 'web']
+      - name: transaction_count
+        description: Number of transaction attempts for the date and currency.
+        data_tests:
+          - not_null
+          - positive_values
+      - name: approved_transaction_count
+        description: Number of authorized, settled, or refunded attempts.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: declined_transaction_count
+        description: Number of declined attempts.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: refunded_transaction_count
+        description: Number of transactions currently marked refunded.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: requested_amount
+        description: Total requested amount for the date and currency.
+        data_tests:
+          - not_null
+          - positive_values
+      - name: approved_requested_amount
+        description: Requested amount associated with approved transactions.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: refunded_requested_amount
+        description: Requested amount associated with transactions currently marked refunded.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: approval_rate
+        description: Approved transaction count divided by total transaction count, from 0 to 1.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1

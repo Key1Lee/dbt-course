@@ -1,0 +1,88 @@
+name: Learning lab checks
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: learning-lab-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  node-lab:
+    name: Node 24 local query lab
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: airbnb
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+          cache: npm
+          cache-dependency-path: airbnb/package-lock.json
+
+      - name: Install locked Node dependencies
+        run: npm ci
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check scripts/apple-pay-lab.mjs
+          node --check scripts/snowflake-query.mjs
+          node --check scripts/lib/sql-safety.mjs
+
+      - name: Exercise the seed-backed model
+        run: npm run lab -- --example daily-performance
+
+      - name: Exercise a custom learning query
+        run: >-
+          npm run lab -- --sql
+          "SELECT transaction_status, COUNT(*) AS transaction_count
+          FROM fct_apple_pay_transactions
+          GROUP BY transaction_status
+          ORDER BY transaction_status"
+
+  dbt-parse:
+    name: dbt dependency and parse check
+    runs-on: ubuntu-latest
+    env:
+      SNOWFLAKE_ACCOUNT: example-account
+      DBT_USER: example_user
+      PRIVATE_KEY: not-a-real-key
+      PRIVATE_KEY_PASSPHRASE: not-a-real-passphrase
+      DBT_ENV_NAME: CI
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dbt 1.11
+        run: python -m pip install "dbt-core~=1.11.0" "dbt-snowflake~=1.11.0"
+
+      - name: Install locked dbt packages
+        run: dbt deps --project-dir airbnb
+
+      - name: Parse the complete project without a warehouse connection
+        run: >-
+          dbt parse
+          --project-dir airbnb
+          --profiles-dir airbnb/_prod_profiles
+          --target dev
+          --no-partial-parse

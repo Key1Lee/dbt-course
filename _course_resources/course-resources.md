@@ -7,7 +7,7 @@ The easiest way is to take a look at your Snowflake Registration email and copy 
 
 ## Automated Snowflake Setup
 I encourage you to go through the automated Snowflake Setup as importing the data and setting the permissions from scratch might take quite some time.
-Follow the instructions here https://dbtsetup.nordquant.com/ to set up your Snowflake database with a click of a button! ( If you encounter any issues with the link below, here is a backup server of the same application: https://udemy-dbt-setup.streamlit.app/ )
+Follow the instructions here https://udemy-dbt-setup.streamlit.app/ to set up your Snowflake database with a click of a button! ( If you encounter any issues with the link below, here is a backup server of the same application: https://dbtsetup.nordquant.com/ )
 
 ## Snowflake data import (manual)
 _Only execute these commands if you decided to skip the Automated Snowflake Setup._
@@ -397,6 +397,32 @@ Making a full-refresh:
 ```
 dbt run --full-refresh
 ```
+
+### Reference Only - Incremental Strategies
+Link to the docs: https://docs.getdbt.com/docs/build/incremental-strategy
+
+#### Merge Strategy Example
+Taking the `fct/fct_reviews.sql` model:
+```sql
+{{
+  config(
+    materialized='incremental',
+    incremental_strategy='merge',
+    unique_key='review_id'
+  )
+}}
+WITH src_reviews AS (
+  SELECT * FROM {{ ref('src_reviews') }}
+)
+SELECT * FROM src_reviews
+WHERE review_text is not null
+
+{% if is_incremental() %}
+  AND review_date > (select max(review_date) from {{ this }})
+{% endif %}
+```
+
+
 ## DIM listings with hosts
 The contents of `dim/dim_listings_w_hosts.sql`:
 ```sql
@@ -699,12 +725,12 @@ SELECT * FROM {{ model }} WHERE {{ column_name }} <= 0
           - type: not_null
         data_tests:
           - unique
-      
+
       - name: host_name
         data_type: string
         constraints:
           - type: not_null
-      
+
       - name: is_superhost
         data_type: string
         data_tests:
@@ -766,6 +792,10 @@ Compile and execute the macro:
 dbt compile --inline "SELECT * FROM {{ ref('dim_listings_cleansed') }} WHERE {{ no_empty_strings(ref('dim_listings_cleansed')) }}"
 dbt show --inline "SELECT * FROM {{ ref('dim_listings_cleansed') }} WHERE {{ no_empty_strings(ref('dim_listings_cleansed')) }}"
 ```
+
+Want to dive deep into `adapter`? [Here is the documentation.](https://docs.getdbt.com/reference/dbt-jinja-functions/adapter?version=2.0&name=Fusion)
+
+
 ## Custom Generic Tests
 The contents of `tests/generic/positive_values.sql`
 ```sql
@@ -1070,11 +1100,11 @@ We've added the `event_time` config to `models/dim/dim_listings_cleansed.sql`:
     materialized = 'view',
     event_time='created_at'
   )
-}} 
+}}
 WITH src_listings AS (
     SELECT * FROM {{ ref('src_listings') }}
 )
-SELECT 
+SELECT
   listing_id,
   listing_name,
   room_type,
@@ -1103,6 +1133,10 @@ dbt run -s dim_listings_w_hosts --sample "3 days"
 _Watch out, the resulting table will be empty as we don't have data in `dim_listings_cleansed` for the past 3 days._
 
 You can check the SQL that's been executed in `target/run/airbnb/models/dim/dim_listings_w_hosts.sql`
+
+### Using Flags
+* Supported Flags: https://docs.getdbt.com/reference/global-configs/about-global-configs
+* Managing behavior changes with Flags: https://docs.getdbt.com/reference/global-configs/behavior-changes
 
 ## Tags and Selectors
 
@@ -1227,7 +1261,7 @@ More information on variable passing: https://docs.getdbt.com/docs/build/project
 ### Dagster
 
 #### Set up your environment
-Let's install the `dagster-dbt` and the `dagster-webserver` package. These packages are located in [requirements.txt](requirements.txt).
+Let's install the `dagster-dbt` and the `dagster-webserver` package. These packages are located in [requirements.txt](../requirements.txt).
 ```
 pip install -r requirements.txt
 ```
@@ -1237,7 +1271,7 @@ pip install -r requirements.txt
 dagster-dbt project scaffold --project-name my_dbt_dagster_project --dbt-project-dir=airbnb
 ```
 
-_At this point in the course, open [schedules.py](dbt_dagster_project/dbt_dagster_project/schedules.py) and uncomment the schedule logic._
+_At this point in the course, open [schedules.py](../dbt_dagster_project/dbt_dagster_project/schedules.py) and review the schedule logic._
 
 #### Start dagster
 Now that our project is created, start the Dagster server:
@@ -1335,14 +1369,14 @@ dbt run -s mart_fullmoon_reviews --full-refresh --event-time-start "2020-01-01" 
 The contents of `models/dim/dim_hosts_cleansed_v2.sql`:
 ```sql
 {#
-  You might have `view` as the materialization as we only 
-  replace `materialized` with `table` when we implement constraints. 
+  You might have `view` as the materialization as we only
+  replace `materialized` with `table` when we implement constraints.
 #}
 {{
   config(
-    materialized = 'table' 
+    materialized = 'table'
     )
-}} 
+}}
 WITH src_hosts AS (
     SELECT
         *
@@ -1453,11 +1487,11 @@ Building for `prod` with the new profile (custom schema materialization test):
 dbt build --target prod --profiles-dir=_prod_profiles --empty
 ```
 
-The custom schema behavior is defined in [`macros/generate_schema_name.sql`](../macros/generate_schema_name.sql).
+The custom schema behavior is defined in [`macros/generate_schema_name.sql`](../airbnb/macros/generate_schema_name.sql).
 
 ## Cleaning up Schemas
 
-The schema cleanup behavior is defined in [`macros/drop_dev_schemas.sql`](../macros/drop_dev_schemas.sql).
+The schema cleanup behavior is defined in [`macros/drop_dev_schemas.sql`](../airbnb/macros/drop_dev_schemas.sql).
 
 Run this command to execute it:
 ```
@@ -1481,7 +1515,7 @@ dbt retry --profiles-dir _prod_profiles
 ### Working with multiple states
 Compile state to production:
 ```
-dbt compile --profiles-dir _prod_profiles --target prod --target-path target-prod            
+dbt compile --profiles-dir _prod_profiles --target prod --target-path target-prod
 ```
 
 See what we've changed:
@@ -1500,6 +1534,11 @@ dbt run --profiles-dir _prod_profiles --target dev --state target-prod --select 
 dbt run-operation drop_dev_schemas --profiles-dir _prod_profiles
 dbt run --profiles-dir _prod_profiles --target dev --state target-prod --select state:modified --defer
 ```
+
+## Impementing Slim CI and Production Pipelines
+Here is the reference repo we are building upon:
+
+https://github.com/zoltanctoth/dbt-reference-production-repo
 
 # dbt Power User
 
