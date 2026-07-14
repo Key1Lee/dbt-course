@@ -413,7 +413,11 @@ function resetProgress() {
   if (!window.confirm("Reset all lesson progress and saved SQL drafts? This cannot be undone.")) return;
   const firstLessonId = course.lessons[0].id;
   state = { ...defaultState(), activeLesson: firstLessonId };
-  localStorage.removeItem(STORAGE_KEY);
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // The in-memory reset still works when a privacy setting blocks storage.
+  }
   clearFeedback();
   renderProgress();
   renderMode();

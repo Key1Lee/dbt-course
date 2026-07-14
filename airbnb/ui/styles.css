@@ -63,8 +63,9 @@ button:disabled {
 }
 
 :focus-visible {
-  outline: 3px solid #f0a51a;
-  outline-offset: 3px;
+  outline: 3px solid #ffd166;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--navy-950) !important;
 }
 
 .skip-link {
